@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Profile | 个人主页</title>
+    <style>
+        :root { --primary-color: #2b5740; --accent-color: #d97706; --bg-color: #f8fafc; --card-bg: #ffffff; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #334155; max-width: 850px; margin: 0 auto; padding: 40px 20px; background-color: var(--bg-color); }
+        header { border-bottom: 3px solid var(--primary-color); padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { font-size: 2.2rem; color: #0f172a; margin: 0 0 8px 0; }
+        .tagline { font-size: 1.15rem; color: var(--primary-color); font-weight: 600; }
+        .sub-tagline { font-size: 0.95rem; color: #64748b; margin-top: 4px; }
+        .section { background: var(--card-bg); padding: 28px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 25px; border: 1px solid #e2e8f0; }
+        h2 { font-size: 1.35rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-top: 0; display: flex; align-items: center; justify-content: space-between; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 18px; }
+        .card { border: 1px solid #e2e8f0; padding: 18px; border-radius: 8px; background: #fafafa; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); border-color: #cbd5e1; }
+        .card h3 { margin: 0 0 8px 0; font-size: 1.05rem; color: #1e293b; }
+        .tag { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 10px; }
+        .tag-pt { background: #dcfce7; color: #166534; }
+        .tag-event { background: #fef3c7; color: #92400e; }
+        ul { padding-left: 20px; margin: 8px 0; }
+        li { margin-bottom: 6px; font-size: 0.95rem; }
+        .social-links a { display: inline-block; margin-right: 15px; color: var(--primary-color); text-decoration: none; font-weight: 600; }
+        .social-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Kiya Zhou</h1>
+        <div class="tagline">Estudante de Língua Portuguesa & Comunicação | 葡语专业 & 传播学</div>
+        <div class="sub-tagline">跨文化数字传播 / 新媒体整合运营 / 国际会议与展会实战</div>
+    </header>
+
+    <!-- 关于我 -->
+    <div class="section">
+        <h2>Sobre Mim / 关于我</h2>
+        <p>澳门科技大学葡语专业在读（辅修传播学）。具备扎实的葡语国家（PLP）区域研究背景与高敏感度的政经洞察力。深耕新媒体内容策划、全平台阵地运营（IG / B站 / 抖音 / 小红书 / 微信公众号）及跨国经贸文化活动的公共关系与宣发执行。</p>
+    </div>
+
+    <!-- 传播与项目实战 -->
+    <div class="section">
+        <h2>Comunicação e Projetos / 传播与项目经历</h2>
+        <div class="grid">
+            
+            <div class="card">
+                <span class="tag tag-event">国际会议策划 / 公关宣发</span>
+                <h3>2026 APEC 衍生活动策划（深圳）</h3>
+                <p><strong>核心亮点：</strong>围绕葡语国家（如非洲葡语国）咖啡进口促进咖啡经济主题。</p>
+                <ul>
+                    <li>负责前期嘉宾沟通联络及现场多方人员调度。</li>
+                    <li>撰写公众号核心宣发文稿，实现高品质活动落地与传播拓展。</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="tag">社团矩阵运营</span>
+                <h3>TEDxMacau 运营与内容创作</h3>
+                <p><strong>核心亮点：</strong>负责官方微信公众号的深度内容撰写与排版发布。</p>
+                <ul>
+                    <li>深入参与社团外部合作机制建立与商务/文化对接。</li>
+                    <li>掌握跨平台运营策略（B站/抖音/小红书/微博/LinkedIn/IG）。</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <span class="tag">自媒体创作者</span>
+                <h3>个人跨文化博主 (@zhouk1ya)</h3>
+                <p><strong>核心亮点：</strong>在 Instagram 上分享葡语学习 Vlog 及网球生活风格。</p>
+                <ul>
+                    <li>通过日常视频叙事打造个性化跨文化 IP。</li>
+                    <li>新闻采访课程期间，深入产出网球相关议题深度访谈与新闻稿件。</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 葡语学术与语言能力 -->
+    <div class="section">
+        <h2>Língua Portuguesa & Pesquisa / 葡语学术与实务</h2>
+        <div class="grid">
+
+            <div class="card">
+                <span class="tag tag-pt">学术研究 / 满绩点</span>
+                <h3>巴西政治与大选研究</h3>
+                <p>在《葡语国家研究》课程中取得满分绩点 (GPA 4.0)。撰写巴西大选预测论文，成功准确预测卢拉（Lula）当选结果，展现出出色的区域政经分析与文献检索能力。</p>
+            </div>
+
+            <div class="card">
+                <span class="tag tag-pt">展会翻译 / 口译实务</span>
+                <h3>2026 葡语国家产品及服务展 (澳门)</h3>
+                <p>作为现场志愿者，协助葡萄牙本地知名品牌 <strong>Pedaços de Cacau®</strong>（手工巧克力）进行中葡现场商务沟通及产品介绍翻译，促进跨文化商业交流。</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 联系方式与社交矩阵 -->
+    <div class="section">
+        <h2>Contato & Redes Sociais / 社交与联系</h2>
+        <div class="social-links">
+            <a href="https://instagram.com/zhouk1ya" target="_blank">📷 Instagram: @zhouk1ya</a>
+            <a href="#">💼 LinkedIn</a>
+            <a href="#">📧 Email 联系我</a>
+        </div>
+    </div>
+
+</body>
+</html>
