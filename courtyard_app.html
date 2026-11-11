@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>courtyard 🎾 | Live Match & Location</title>
+    <!-- 引入 Leaflet 开源地图样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary: #15803d; --dark: #0f172a; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: white; display: flex; flex-direction: column; height: 100vh; }
+        
+        /* 导航栏 */
+        header { background: rgba(15, 23, 42, 0.9); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; z-index: 1000; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: #4ade80; letter-spacing: -0.5px; }
+        .user-status { display: flex; gap: 15px; align-items: center; }
+        .btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-location { background: #3b82f6; }
+
+        /* 主体布局：左侧地图，右侧匹配列表 */
+        .main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
+        #map { flex: 2; height: 100%; background: #000; }
+        
+        /* 右侧用户匹配列表 (Tandem 风格) */
+        .sidebar { flex: 1; min-width: 320px; max-width: 400px; background: #0f172a; border-left: 1px solid #1e293b; padding: 20px; overflow-y: auto; }
+        .sidebar h2 { font-size: 1.2rem; color: #94a3b8; margin-top: 0; }
+        
+        /* 匹配卡片 */
+        .player-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 15px; border: 1px solid #334155; transition: 0.2s; }
+        .player-card:hover { border-color: #4ade80; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; }
+        .player-name { font-weight: 700; font-size: 1.1rem; }
+        .ntpr-badge { background: #ca8a04; color: black; font-weight: 800; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .player-info { font-size: 0.9rem; color: #94a3b8; margin: 8px 0; }
+        .player-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .tag { background: #334155; color: #cbd5e1; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; }
+        .tag-court { background: #064e3b; color: #4ade80; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">courtyard 🎾</div>
+        <div class="user-status">
+            <button class="btn btn-location" onclick="shareLocation()">📍 共享我的定位</button>
+            <button class="btn" onclick="openLogin()">登录 / 注册</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- 地图区域 -->
+        <div id="map"></div>
+
+        <!-- 侧边栏：在线匹配列表 -->
+        <div class="sidebar">
+            <h2>附近在线的球友 (Nearby Players)</h2>
+            
+            <!-- 卡片 1 -->
+            <div class="player-card">
+                <div class="player-header">
+                    <span class="player-name">Kiya 🇲🇴</span>
+                    <span class="ntpr-badge">NTPR 3.5</span>
+                </div>
+                <div class="player-info">📍 澳门 Cotai | 拥有路氹球场预订资格</div>
+                <div class="player-tags">
+                    <span class="tag tag-court">可协助订场</span>
+                    <span class="tag">Portuguese / Eng</span>
+                    <span class="tag">求单打/双打</span>
+                </div>
+            </div>
+
+            <!-- 卡片 2 -->
+            <div class="player-card">
+                <div class="player-header">
+                    <span class="player-name">Lucas (Staycationer) 🇧🇷</span>
+                    <span class="ntpr-badge">NTPR 4.0</span>
+                </div>
+                <div class="player-info">📍 澳门半岛 (Hotel Stay) | 寻找本地伴打</div>
+                <div class="player-tags">
+                    <span class="tag">寻求球场</span>
+                    <span class="tag">Português / Eng</span>
+                    <span class="tag">拉球练习</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 引入 Leaflet 地图 JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 初始化深色风格地图（默认定位在澳门）
+        const map = L.map('map').setView([22.1987, 113.5439], 13);
+        
+        // 加载高清深色地图图层
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 默认模拟标签 Marker
+        L.marker([22.1487, 113.5639]).addTo(map).bindPopup('<b>Kiya</b><br>NTPR 3.5 (有订场资格)');
+        L.marker([22.1987, 113.5439]).addTo(map).bindPopup('<b>Lucas</b><br>NTPR 4.0 (求搭档)');
+
+        // 获取用户实时地理位置功能
+        function shareLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // 地图平移到用户定位
+                    map.setView([lat, lng], 14);
+                    
+                    // 标记当前位置
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup('<b>你当前的位置</b><br>已设置为在线')
+                        .openPopup();
+                        
+                    alert("📍 位置共享成功！你的坐标已打点在地图上。");
+                }, () => {
+                    alert("无法获取地理位置，请在浏览器中开启定位权限。");
+                });
+            } else {
+                alert("你的浏览器不支持地理定位。");
+            }
+        }
+
+        function openLogin() {
+            alert("即将接入 Supabase 用户注册与登录系统！");
+        }
+    </script>
+</body>
+</html>
