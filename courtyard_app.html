@@ -3,132 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>courtyard 🎾 | Live Match & Location</title>
-    <!-- 引入 Leaflet 开源地图样式 -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>courtyard 🎾 | 3D Global Matcher</title>
+    <!-- 引入 3D 星球渲染库 -->
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
     <style>
-        :root { --primary: #15803d; --dark: #0f172a; }
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: white; display: flex; flex-direction: column; height: 100vh; }
+        :root { --primary: #22c55e; --accent: #eab308; --bg: #030712; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* 导航栏 */
-        header { background: rgba(15, 23, 42, 0.9); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; z-index: 1000; }
-        .logo { font-size: 1.5rem; font-weight: 800; color: #4ade80; letter-spacing: -0.5px; }
-        .user-status { display: flex; gap: 15px; align-items: center; }
-        .btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .btn-location { background: #3b82f6; }
+        /* 顶栏 Header */
+        header { position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(3, 7, 18, 0.9), transparent); pointer-events: none; }
+        .logo { font-size: 1.8rem; font-weight: 900; color: var(--primary); letter-spacing: -1px; text-shadow: 0 0 20px rgba(34, 197, 94, 0.4); pointer-events: auto; }
+        .btn-status { background: rgba(34, 197, 94, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 8px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); pointer-events: auto; transition: 0.3s; }
+        .btn-status:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
 
-        /* 主体布局：左侧地图，右侧匹配列表 */
-        .main-container { display: flex; flex: 1; position: relative; overflow: hidden; }
-        #map { flex: 2; height: 100%; background: #000; }
-        
-        /* 右侧用户匹配列表 (Tandem 风格) */
-        .sidebar { flex: 1; min-width: 320px; max-width: 400px; background: #0f172a; border-left: 1px solid #1e293b; padding: 20px; overflow-y: auto; }
-        .sidebar h2 { font-size: 1.2rem; color: #94a3b8; margin-top: 0; }
-        
-        /* 匹配卡片 */
-        .player-card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 15px; border: 1px solid #334155; transition: 0.2s; }
-        .player-card:hover { border-color: #4ade80; }
-        .player-header { display: flex; justify-content: space-between; align-items: center; }
-        .player-name { font-weight: 700; font-size: 1.1rem; }
-        .ntpr-badge { background: #ca8a04; color: black; font-weight: 800; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; }
-        .player-info { font-size: 0.9rem; color: #94a3b8; margin: 8px 0; }
-        .player-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-        .tag { background: #334155; color: #cbd5e1; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; }
-        .tag-court { background: #064e3b; color: #4ade80; }
+        /* 3D 星球画布容器 */
+        #globeViz { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        /* 右侧浮动球友卡片面板 */
+        .sidebar { position: absolute; right: 20px; top: 90px; bottom: 30px; width: 340px; z-index: 10; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .sidebar h2 { font-size: 1.1rem; color: #94a3b8; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
+
+        .player-card { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s ease; }
+        .player-card:hover, .player-card.active { border-color: var(--primary); background: rgba(34, 197, 94, 0.1); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34, 197, 94, 0.15); }
+        .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .player-name { font-weight: 700; font-size: 1.1rem; color: #f8fafc; }
+        .ntpr-badge { background: var(--accent); color: #000; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; }
+        .player-info { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 10px; }
+        .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag { background: rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; }
+        .tag-host { background: rgba(34, 197, 94, 0.2); color: var(--primary); border: 1px solid rgba(34, 197, 94, 0.3); }
+
+        /* 移动端自适应 */
+        @media (max-width: 768px) {
+            .sidebar { width: calc(100% - 40px); left: 20px; top: auto; bottom: 20px; height: 260px; }
+        }
     </style>
 </head>
 <body>
 
     <header>
         <div class="logo">courtyard 🎾</div>
-        <div class="user-status">
-            <button class="btn btn-location" onclick="shareLocation()">📍 共享我的定位</button>
-            <button class="btn" onclick="openLogin()">登录 / 注册</button>
-        </div>
+        <button class="btn-status" onclick="locateMe()">📍 Share My Staycation Location</button>
     </header>
 
-    <div class="main-container">
-        <!-- 地图区域 -->
-        <div id="map"></div>
+    <!-- 3D 渲染区域 -->
+    <div id="globeViz"></div>
 
-        <!-- 侧边栏：在线匹配列表 -->
-        <div class="sidebar">
-            <h2>附近在线的球友 (Nearby Players)</h2>
-            
-            <!-- 卡片 1 -->
-            <div class="player-card">
-                <div class="player-header">
-                    <span class="player-name">Kiya 🇲🇴</span>
-                    <span class="ntpr-badge">NTPR 3.5</span>
-                </div>
-                <div class="player-info">📍 澳门 Cotai | 拥有路氹球场预订资格</div>
-                <div class="player-tags">
-                    <span class="tag tag-court">可协助订场</span>
-                    <span class="tag">Portuguese / Eng</span>
-                    <span class="tag">求单打/双打</span>
-                </div>
-            </div>
-
-            <!-- 卡片 2 -->
-            <div class="player-card">
-                <div class="player-header">
-                    <span class="player-name">Lucas (Staycationer) 🇧🇷</span>
-                    <span class="ntpr-badge">NTPR 4.0</span>
-                </div>
-                <div class="player-info">📍 澳门半岛 (Hotel Stay) | 寻找本地伴打</div>
-                <div class="player-tags">
-                    <span class="tag">寻求球场</span>
-                    <span class="tag">Português / Eng</span>
-                    <span class="tag">拉球练习</span>
-                </div>
-            </div>
-
-        </div>
+    <!-- 匹配列表 -->
+    <div class="sidebar">
+        <h2>Live Players Online</h2>
+        <div id="playerList"></div>
     </div>
 
-    <!-- 引入 Leaflet 地图 JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 初始化深色风格地图（默认定位在澳门）
-        const map = L.map('map').setView([22.1987, 113.5439], 13);
-        
-        // 加载高清深色地图图层
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            maxZoom: 19
-        }).addTo(map);
+        // 模拟全球 Staycation 网球手数据
+        const playersData = [
+            { id: 1, name: "Kiya 🇲🇴", lat: 22.1987, lng: 113.5439, ntpr: "3.5", location: "Macao (Cotai)", desc: "Court booking access available. Looking for singles/doubles.", tags: ["Court Host", "Português", "Eng"], color: "#22c55e" },
+            { id: 2, name: "Lucas 🇧🇷", lat: -23.5505, lng: -46.6333, ntpr: "4.0", location: "São Paulo (Staycation)", desc: "Travelling for business. Need a hit tonight!", tags: ["Seeker", "Português", "Rally"], color: "#eab308" },
+            { id: 3, name: "Sofia 🇵🇹", lat: 38.7223, lng: -9.1393, ntpr: "3.0", location: "Lisbon", desc: "Local player with clay court access.", tags: ["Court Host", "Português", "Eng"], color: "#22c55e" },
+            { id: 4, name: "Kenji 🇯🇵", lat: 35.6762, lng: 139.6503, ntpr: "4.5", location: "Tokyo (Shinjuku)", desc: "Staycationer looking for high-level match.", tags: ["Seeker", "English"], color: "#3b82f6" }
+        ];
 
-        // 默认模拟标签 Marker
-        L.marker([22.1487, 113.5639]).addTo(map).bindPopup('<b>Kiya</b><br>NTPR 3.5 (有订场资格)');
-        L.marker([22.1987, 113.5439]).addTo(map).bindPopup('<b>Lucas</b><br>NTPR 4.0 (求搭档)');
+        // 初始化 3D 地球
+        const world = Globe()
+            (document.getElementById('globeViz'))
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+            .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+            .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+            // 设置发光环动画（代表网球热点）
+            .ringsData(playersData)
+            .ringColor(d => d.color)
+            .ringMaxRadius(8)
+            .ringPropagationSpeed(3)
+            .ringRepeatPeriod(1000)
+            // 设置 3D 打点柱体
+            .pointsData(playersData)
+            .pointColor(d => d.color)
+            .pointAltitude(0.05)
+            .pointRadius(0.8)
+            .pointResolution(32)
+            .onPointClick(point => focusPlayer(point.id));
 
-        // 获取用户实时地理位置功能
-        function shareLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    // 地图平移到用户定位
-                    map.setView([lat, lng], 14);
-                    
-                    // 标记当前位置
-                    L.marker([lat, lng]).addTo(map)
-                        .bindPopup('<b>你当前的位置</b><br>已设置为在线')
-                        .openPopup();
-                        
-                    alert("📍 位置共享成功！你的坐标已打点在地图上。");
-                }, () => {
-                    alert("无法获取地理位置，请在浏览器中开启定位权限。");
-                });
-            } else {
-                alert("你的浏览器不支持地理定位。");
+        // 自动缓慢旋转
+        world.controls().autoRotate = true;
+        world.controls().autoRotateSpeed = 0.8;
+
+        // 渲染右侧卡片列表
+        const listContainer = document.getElementById('playerList');
+        playersData.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.id = `card-${p.id}`;
+            card.onclick = () => focusPlayer(p.id);
+            card.innerHTML = `
+                <div class="player-header">
+                    <span class="player-name">${p.name}</span>
+                    <span class="ntpr-badge">NTPR ${p.ntpr}</span>
+                </div>
+                <div class="player-info">📍 ${p.location}<br>${p.desc}</div>
+                <div class="tags">
+                    ${p.tags.map(t => `<span class="tag ${t.includes('Host')?'tag-host':''}">${t}</span>`).join('')}
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+
+        // 点击卡片或打点，镜头平滑飞向对应地点
+        function focusPlayer(id) {
+            const p = playersData.find(item => item.id === id);
+            if (!p) return;
+
+            // 暂停自动旋转并飞行聚焦
+            world.controls().autoRotate = false;
+            world.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.8 }, 2000);
+
+            // 高亮卡片
+            document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+            const activeCard = document.getElementById(`card-${id}`);
+            if (activeCard) {
+                activeCard.classList.add('active');
+                activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
 
-        function openLogin() {
-            alert("即将接入 Supabase 用户注册与登录系统！");
+        // 定位功能
+        function locateMe() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const myLat = pos.coords.latitude;
+                    const myLng = pos.coords.longitude;
+
+                    const me = { id: 99, name: "You (Online) 🎾", lat: myLat, lng: myLng, ntpr: "Your Level", location: "Current Location", desc: "Sharing live position...", tags: ["Online Now"], color: "#22c55e" };
+                    playersData.unshift(me);
+                    
+                    world.ringsData(playersData);
+                    world.pointsData(playersData);
+                    focusPlayer(99);
+                    alert("📍 Successfully pinned your live location on the 3D Globe!");
+                });
+            }
         }
+
+        // 默认定位在澳门 (Kiya)
+        setTimeout(() => focusPlayer(1), 1000);
     </script>
 </body>
 </html>
