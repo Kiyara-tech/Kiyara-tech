@@ -3,93 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>courtyard 🎾 | 3D Global Matcher</title>
-    <!-- 引入 3D 星球渲染库 -->
+    <title>courtyard 🎾 | Premium 3D Global Matcher</title>
+    <!-- Three.js & Globe.gl -->
     <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/globe.gl"></script>
     <style>
-        :root { --primary: #22c55e; --accent: #eab308; --bg: #030712; }
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        :root { 
+            --accent-glow: #ffffff;
+            --bg-dark: #020617; 
+        }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-dark); color: #f8fafc; overflow: hidden; height: 100vh; width: 100vw; }
         
-        /* 顶栏 Header */
-        header { position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(3, 7, 18, 0.9), transparent); pointer-events: none; }
-        .logo { font-size: 1.8rem; font-weight: 900; color: var(--primary); letter-spacing: -1px; text-shadow: 0 0 20px rgba(34, 197, 94, 0.4); pointer-events: auto; }
-        .btn-status { background: rgba(34, 197, 94, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 8px 18px; border-radius: 20px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); pointer-events: auto; transition: 0.3s; }
-        .btn-status:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
+        /* 顶部 Header */
+        header { position: absolute; top: 0; left: 0; right: 0; z-index: 20; padding: 24px 32px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(2, 6, 23, 0.85), transparent); pointer-events: none; }
+        
+        /* Brand Logo 颜色修改：微渐变与高品质发光 */
+        .logo { font-size: 1.9rem; font-weight: 800; background: linear-gradient(135deg, #34d399 0%, #fbbf24 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; filter: drop-shadow(0 2px 8px rgba(52, 211, 153, 0.3)); pointer-events: auto; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .logo span.icon { font-size: 1.6rem; -webkit-text-fill-color: initial; }
 
-        /* 3D 星球画布容器 */
+        .btn-status { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #f8fafc; padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 0.9rem; cursor: pointer; backdrop-filter: blur(12px); pointer-events: auto; transition: all 0.3s ease; }
+        .btn-status:hover { background: rgba(255, 255, 255, 0.2); border-color: #ffffff; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4); }
+
+        /* 地球画布 */
         #globeViz { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* 右侧浮动球友卡片面板 */
-        .sidebar { position: absolute; right: 20px; top: 90px; bottom: 30px; width: 340px; z-index: 10; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .sidebar h2 { font-size: 1.1rem; color: #94a3b8; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
+        /* 右侧可折叠信息栏 */
+        .sidebar-container { position: absolute; right: 28px; top: 90px; z-index: 20; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .sidebar { width: 340px; max-height: calc(100vh - 140px); background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 20px; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); transition: all 0.3s ease; }
+        
+        /* 折叠收起状态下的样式 */
+        .sidebar-container.collapsed .sidebar { opacity: 0; pointer-events: none; transform: scale(0.95) translateX(20px); height: 0; padding: 0; border: none; }
 
-        .player-card { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s ease; }
-        .player-card:hover, .player-card.active { border-color: var(--primary); background: rgba(34, 197, 94, 0.1); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34, 197, 94, 0.15); }
-        .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .player-name { font-weight: 700; font-size: 1.1rem; color: #f8fafc; }
-        .ntpr-badge { background: var(--accent); color: #000; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; }
-        .player-info { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 10px; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .sidebar-title { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.2px; }
+        
+        /* 折叠切换按钮 */
+        .toggle-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.15); color: #e2e8f0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; pointer-events: auto; }
+        .toggle-btn:hover { background: rgba(255, 255, 255, 0.25); color: #fff; transform: scale(1.05); }
+
+        /* 球友卡片 */
+        .player-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease; }
+        .player-card:hover, .player-card.active { border-color: rgba(255, 255, 255, 0.6); background: rgba(255, 255, 255, 0.08); transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.1); }
+        
+        .player-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .player-name { font-weight: 700; font-size: 1.05rem; color: #ffffff; }
+        .ntpr-badge { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.2); color: #fbbf24; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; }
+        
+        .player-info { font-size: 0.85rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px; }
         .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-        .tag { background: rgba(255,255,255,0.08); color: #94a3b8; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px; }
-        .tag-host { background: rgba(34, 197, 94, 0.2); color: var(--primary); border: 1px solid rgba(34, 197, 94, 0.3); }
+        .tag { background: rgba(255, 255, 255, 0.06); color: #94a3b8; font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .tag-host { background: rgba(52, 211, 153, 0.15); color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
 
-        /* 移动端自适应 */
-        @media (max-width: 768px) {
-            .sidebar { width: calc(100% - 40px); left: 20px; top: auto; bottom: 20px; height: 260px; }
-        }
+        /* 隐藏滚动条 */
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo">courtyard 🎾</div>
-        <button class="btn-status" onclick="locateMe()">📍 Share My Staycation Location</button>
+        <div class="logo"><span class="icon">🎾</span>courtyard</div>
+        <button class="btn-status" onclick="shareLocation()">📍 Share Staycation Location</button>
     </header>
 
-    <!-- 3D 渲染区域 -->
     <div id="globeViz"></div>
 
-    <!-- 匹配列表 -->
-    <div class="sidebar">
-        <h2>Live Players Online</h2>
-        <div id="playerList"></div>
+    <!-- 可折叠侧边栏容器 -->
+    <div class="sidebar-container" id="sidebarContainer">
+        <div class="sidebar-header" style="justify-content: flex-end; margin-bottom: 8px;">
+            <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()" title="Toggle Panel">—</button>
+        </div>
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Live Staycation Players</span>
+            </div>
+            <div id="playerList"></div>
+        </div>
     </div>
 
     <script>
-        // 模拟全球 Staycation 网球手数据
+        // 示例数据：增加国家 ISO 3 位代码 (ISO_A3) 用于精确高亮轮廓
         const playersData = [
-            { id: 1, name: "Kiya 🇲🇴", lat: 22.1987, lng: 113.5439, ntpr: "3.5", location: "Macao (Cotai)", desc: "Court booking access available. Looking for singles/doubles.", tags: ["Court Host", "Português", "Eng"], color: "#22c55e" },
-            { id: 2, name: "Lucas 🇧🇷", lat: -23.5505, lng: -46.6333, ntpr: "4.0", location: "São Paulo (Staycation)", desc: "Travelling for business. Need a hit tonight!", tags: ["Seeker", "Português", "Rally"], color: "#eab308" },
-            { id: 3, name: "Sofia 🇵🇹", lat: 38.7223, lng: -9.1393, ntpr: "3.0", location: "Lisbon", desc: "Local player with clay court access.", tags: ["Court Host", "Português", "Eng"], color: "#22c55e" },
-            { id: 4, name: "Kenji 🇯🇵", lat: 35.6762, lng: 139.6503, ntpr: "4.5", location: "Tokyo (Shinjuku)", desc: "Staycationer looking for high-level match.", tags: ["Seeker", "English"], color: "#3b82f6" }
+            { id: 1, name: "Kiya 🇲🇴", iso: "MAC", lat: 22.1987, lng: 113.5439, ntpr: "3.5", location: "Macao (Cotai)", desc: "Local court booking access available. Looking for singles or doubles.", tags: ["Court Host", "Português", "English"] },
+            { id: 2, name: "Lucas 🇧🇷", iso: "BRA", lat: -23.5505, lng: -46.6333, ntpr: "4.0", location: "São Paulo", desc: "Travelling for business. Looking for a high-intensity rally tonight!", tags: ["Seeker", "Português", "Rally"] },
+            { id: 3, name: "Sofia 🇵🇹", iso: "PRT", lat: 38.7223, lng: -9.1393, ntpr: "3.0", location: "Lisbon", desc: "Local player with private clay court access. Free on weekends.", tags: ["Court Host", "Português", "English"] },
+            { id: 4, name: "Kenji 🇯🇵", iso: "JPN", lat: 35.6762, lng: 139.6503, ntpr: "4.5", location: "Tokyo (Shinjuku)", desc: "Staycationer seeking competitive matches. Advanced level.", tags: ["Seeker", "English"] }
         ];
 
-        // 初始化 3D 地球
-        const world = Globe()
-            (document.getElementById('globeViz'))
-            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
-            .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-            .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-            // 设置发光环动画（代表网球热点）
-            .ringsData(playersData)
-            .ringColor(d => d.color)
-            .ringMaxRadius(8)
-            .ringPropagationSpeed(3)
-            .ringRepeatPeriod(1000)
-            // 设置 3D 打点柱体
-            .pointsData(playersData)
-            .pointColor(d => d.color)
-            .pointAltitude(0.05)
-            .pointRadius(0.8)
-            .pointResolution(32)
-            .onPointClick(point => focusPlayer(point.id));
+        let selectedISO = "MAC"; // 默认聚焦并高亮澳门所在区域
+        let globeInstance;
 
-        // 自动缓慢旋转
-        world.controls().autoRotate = true;
-        world.controls().autoRotateSpeed = 0.8;
+        // 加载包含全球所有国家/地区真实边界轮廓的 GeoJSON 矢量数据
+        fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
+            .then(res => res.json())
+            .then(countries => {
+                
+                globeInstance = Globe()
+                    (document.getElementById('globeViz'))
+                    .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+                    .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+                    .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+                    
+                    /* 1. 地球国家矢量轮廓高亮逻辑 */
+                    .polygonsData(countries.features)
+                    .polygonCapColor(feat => {
+                        // 如果是被选中的国家/地区，呈现高透明度柔和亮白光，未选中则透明
+                        const iso = feat.properties.ISO_A3 || feat.properties.ADM0_A3;
+                        return iso === selectedISO ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0)';
+                    })
+                    .polygonSideColor(() => 'rgba(255, 255, 255, 0.05)')
+                    .polygonStrokeColor(feat => {
+                        // 选中的国家/地区边缘显示高亮白光轮廓线
+                        const iso = feat.properties.ISO_A3 || feat.properties.ADM0_A3;
+                        return iso === selectedISO ? '#ffffff' : 'rgba(255, 255, 255, 0.08)';
+                    })
+                    .polygonAltitude(feat => {
+                        const iso = feat.properties.ISO_A3 || feat.properties.ADM0_A3;
+                        return iso === selectedISO ? 0.015 : 0.005;
+                    })
 
-        // 渲染右侧卡片列表
+                    /* 2. 精致微发光节点 (代替生硬大斑点) */
+                    .htmlElementsData(playersData)
+                    .htmlElement(d => {
+                        const el = document.createElement('div');
+                        el.innerHTML = `
+                            <div style="width:12px; height:12px; background:#ffffff; border-radius:50%; box-shadow:0 0 15px 4px rgba(255,255,255,0.9); cursor:pointer; transform:translate(-50%, -50%); border:2px solid #34d399;"></div>
+                        `;
+                        el.onclick = () => focusPlayer(d.id);
+                        return el;
+                    });
+
+                // 控制视角
+                globeInstance.controls().autoRotate = true;
+                globeInstance.controls().autoRotateSpeed = 0.5;
+
+                // 初始化飞行至第一个玩家 (Kiya - Macao)
+                setTimeout(() => focusPlayer(1), 800);
+            });
+
+        // 渲染右侧面板列表
         const listContainer = document.getElementById('playerList');
         playersData.forEach(p => {
             const card = document.createElement('div');
@@ -97,7 +150,7 @@
             card.id = `card-${p.id}`;
             card.onclick = () => focusPlayer(p.id);
             card.innerHTML = `
-                <div class="player-header">
+                <div class="player-top">
                     <span class="player-name">${p.name}</span>
                     <span class="ntpr-badge">NTPR ${p.ntpr}</span>
                 </div>
@@ -109,16 +162,21 @@
             listContainer.appendChild(card);
         });
 
-        // 点击卡片或打点，镜头平滑飞向对应地点
+        // 聚焦球友：触发 3D 平滑旋转 + 刷新目标国家白光轮廓高亮
         function focusPlayer(id) {
             const p = playersData.find(item => item.id === id);
-            if (!p) return;
+            if (!p || !globeInstance) return;
 
-            // 暂停自动旋转并飞行聚焦
-            world.controls().autoRotate = false;
-            world.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.8 }, 2000);
+            selectedISO = p.iso;
+            
+            // 刷新多边形高亮轮廓
+            globeInstance.polygonsData(globeInstance.polygonsData());
 
-            // 高亮卡片
+            // 暂停自动自转并平滑聚焦飞行
+            globeInstance.controls().autoRotate = false;
+            globeInstance.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.6 }, 1800);
+
+            // 卡片选中态切换
             document.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
             const activeCard = document.getElementById(`card-${id}`);
             if (activeCard) {
@@ -127,26 +185,37 @@
             }
         }
 
-        // 定位功能
-        function locateMe() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const myLat = pos.coords.latitude;
-                    const myLng = pos.coords.longitude;
-
-                    const me = { id: 99, name: "You (Online) 🎾", lat: myLat, lng: myLng, ntpr: "Your Level", location: "Current Location", desc: "Sharing live position...", tags: ["Online Now"], color: "#22c55e" };
-                    playersData.unshift(me);
-                    
-                    world.ringsData(playersData);
-                    world.pointsData(playersData);
-                    focusPlayer(99);
-                    alert("📍 Successfully pinned your live location on the 3D Globe!");
-                });
+        // 折叠 / 展开右侧面板
+        let isCollapsed = false;
+        function toggleSidebar() {
+            const container = document.getElementById('sidebarContainer');
+            const btn = document.getElementById('toggleBtn');
+            isCollapsed = !isCollapsed;
+            
+            if (isCollapsed) {
+                container.classList.add('collapsed');
+                btn.innerHTML = '+';
+                btn.title = "Expand Panel";
+            } else {
+                container.classList.remove('collapsed');
+                btn.innerHTML = '—';
+                btn.title = "Collapse Panel";
             }
         }
 
-        // 默认定位在澳门 (Kiya)
-        setTimeout(() => focusPlayer(1), 1000);
+        // 共享实时定位
+        function shareLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    
+                    globeInstance.controls().autoRotate = false;
+                    globeInstance.pointOfView({ lat, lng, altitude: 1.4 }, 2000);
+                    alert("📍 Located your staycation position! Broadcasted onto the 3D Globe.");
+                });
+            }
+        }
     </script>
 </body>
 </html>
